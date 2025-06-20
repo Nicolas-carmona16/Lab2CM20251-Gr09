@@ -177,8 +177,8 @@ fun ConversationContent(
                 onNavIconPressed = onNavIconPressed,
                 scrollBehavior = scrollBehavior,
                 onSimulateTyping = {
-                    // Simular que otro usuario está escribiendo
-                    uiState.simulateOtherUserTyping(scope, "Taylor Brooks")
+                    // Simular que otro usuario está escribiendo usando nombres de la API
+                    uiState.simulateOtherUserTyping(scope)
                 },
             )
         },
