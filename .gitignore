@@ -1,0 +1,22 @@
+# Android Studio
+*.iml
+.idea/
+build/
+captures/
+local.properties
+
+# Gradle
+.gradle/
+
+# Archivos generados
+**/generated/
+
+# Sistemas operativos
+.DS_Store
+
+# Android/NDK
+.externalNativeBuild
+.cxx
+
+# Kotlin (si usas JetBrains Toolbox)
+.kotlin/
