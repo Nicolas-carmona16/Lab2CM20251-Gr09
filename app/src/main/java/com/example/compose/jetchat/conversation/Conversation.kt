@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
@@ -49,6 +50,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AlternateEmail
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Divider
@@ -174,6 +176,10 @@ fun ConversationContent(
                 channelMembers = uiState.channelMembers,
                 onNavIconPressed = onNavIconPressed,
                 scrollBehavior = scrollBehavior,
+                onSimulateTyping = {
+                    // Simular que otro usuario está escribiendo
+                    uiState.simulateOtherUserTyping(scope, "Taylor Brooks")
+                },
             )
         },
         // Exclude ime and navigation bar padding so this can be added by the UserInput composable
@@ -201,6 +207,21 @@ fun ConversationContent(
                 modifier = Modifier.weight(1f),
                 scrollState = scrollState,
             )
+
+            // Indicador de "usuario escribiendo"
+            UserTypingIndicator(
+                isVisible = uiState.isUserTyping,
+                userName = authorMe,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            // Indicador de "otro usuario escribiendo"
+            UserTypingIndicator(
+                isVisible = uiState.otherUserTyping != null,
+                userName = uiState.otherUserTyping,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
             UserInput(
                 onMessageSent = { content ->
                     uiState.addMessage(
@@ -211,6 +232,12 @@ fun ConversationContent(
                     scope.launch {
                         scrollState.scrollToItem(0)
                     }
+                },
+                onTypingStarted = {
+                    uiState.startTyping(scope)
+                },
+                onTypingStopped = {
+                    uiState.stopTyping()
                 },
                 // let this element handle the padding so that the elevation is shown behind the
                 // navigation bar
@@ -228,6 +255,7 @@ fun ChannelNameBar(
     modifier: Modifier = Modifier,
     scrollBehavior: TopAppBarScrollBehavior? = null,
     onNavIconPressed: () -> Unit = { },
+    onSimulateTyping: () -> Unit = { },
 ) {
     var functionalityNotAvailablePopupShown by remember { mutableStateOf(false) }
     if (functionalityNotAvailablePopupShown) {
@@ -253,6 +281,16 @@ fun ChannelNameBar(
             }
         },
         actions = {
+            // Botón para simular escritura de otros usuarios
+            Icon(
+                imageVector = Icons.Outlined.AlternateEmail,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .clickable(onClick = onSimulateTyping)
+                    .padding(horizontal = 12.dp, vertical = 16.dp)
+                    .height(24.dp),
+                contentDescription = "Simular escritura",
+            )
             // Search icon
             Icon(
                 imageVector = Icons.Outlined.Search,
@@ -332,7 +370,7 @@ fun Messages(messages: List<Message>, navigateToProfile: (String) -> Unit, scrol
         val jumpToBottomButtonEnabled by remember {
             derivedStateOf {
                 scrollState.firstVisibleItemIndex != 0 ||
-                    scrollState.firstVisibleItemScrollOffset > jumpThreshold
+                        scrollState.firstVisibleItemScrollOffset > jumpThreshold
             }
         }
 

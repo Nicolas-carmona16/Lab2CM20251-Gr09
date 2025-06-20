@@ -80,6 +80,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -138,7 +139,13 @@ fun UserInputPreview() {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun UserInput(onMessageSent: (String) -> Unit, modifier: Modifier = Modifier, resetScroll: () -> Unit = {}) {
+fun UserInput(
+    onMessageSent: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    resetScroll: () -> Unit = {},
+    onTypingStarted: () -> Unit = {},
+    onTypingStopped: () -> Unit = {},
+) {
     var currentInputSelector by rememberSaveable { mutableStateOf(InputSelector.NONE) }
     val dismissKeyboard = { currentInputSelector = InputSelector.NONE }
 
@@ -153,6 +160,18 @@ fun UserInput(onMessageSent: (String) -> Unit, modifier: Modifier = Modifier, re
 
     // Used to decide if the keyboard should be shown
     var textFieldFocusState by remember { mutableStateOf(false) }
+
+    // Coroutine scope para manejar las corrutinas de escritura
+    val scope = rememberCoroutineScope()
+
+    // Efecto para detectar cambios en el texto y manejar el estado de escritura
+    LaunchedEffect(textState.text) {
+        if (textState.text.isNotBlank()) {
+            onTypingStarted()
+        } else {
+            onTypingStopped()
+        }
+    }
 
     Surface(tonalElevation = 2.dp, contentColor = MaterialTheme.colorScheme.secondary) {
         Column(modifier = modifier) {
@@ -175,6 +194,8 @@ fun UserInput(onMessageSent: (String) -> Unit, modifier: Modifier = Modifier, re
                     textState = TextFieldValue()
                     // Move scroll to bottom
                     resetScroll()
+                    // Detener el indicador de escritura
+                    onTypingStopped()
                 },
                 focusState = textFieldFocusState,
             )
@@ -188,6 +209,8 @@ fun UserInput(onMessageSent: (String) -> Unit, modifier: Modifier = Modifier, re
                     // Move scroll to bottom
                     resetScroll()
                     dismissKeyboard()
+                    // Detener el indicador de escritura
+                    onTypingStopped()
                 },
                 currentInputSelector = currentInputSelector,
             )
